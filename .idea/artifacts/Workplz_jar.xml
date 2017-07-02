@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Workplz:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Workplz_jar</output-path>
+    <root id="archive" name="Workplz.jar">
+      <element id="module-output" name="Workplz" />
+    </root>
+  </artifact>
+</component>
