@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.io.File;
 import java.util.LinkedList;
@@ -12,13 +13,21 @@ public class Gui {
     private JButton chooseFileDirectoryButton;
     private JPanel root;
     private JProgressBar progressBar1;
-    private JComboBox comboBox1;
-    private JComboBox comboBox2;
-    private JComboBox comboBox3;
+    private JComboBox speedComboBox1;
+    private JComboBox codecComboBox2;
+    private JComboBox encodingComboBox3;
     private JTextField textField1;
     private JSlider slider1;
     private JLabel timeLabel;
     private JButton pauseButton;
+    private JCheckBox mp4CheckBox;
+    private JCheckBox movCheckBox;
+    private JCheckBox webmCheckBox;
+    private JCheckBox mkvCheckBox;
+    private JTextField textField2;
+    private JCheckBox aviCheckBox;
+    private JButton chooseSingleFileButton;
+    private JCheckBox mpegCheckBox;
     private JFileChooser jf;
     private JFrame f;
     private Changefiles ch;
@@ -26,7 +35,7 @@ public class Gui {
     private int minutes;
     private int hours;
     private Timer timer;
-    public static boolean pause = false;
+    private String[] filter;
     public Gui(){
         //Shutdown hook, will run when window is closed
         Runtime.getRuntime().addShutdownHook(new Thread(()->{
@@ -75,7 +84,20 @@ public class Gui {
             if(returnVal == JFileChooser.APPROVE_OPTION) {
 
                 File[] listOfFiles = jf.getSelectedFile().listFiles();
+                filterBuilder(); //builds the filter
+                sendFiles(listOfFiles);
+            }
+        });
+        chooseSingleFileButton.addActionListener((ActionEvent e) ->{
+            progressBar1.setValue(0);
+            progressBar1.setString("");
+            jf = new JFileChooser();
+            jf.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            int returnVal = jf.showOpenDialog(f);
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
 
+                File[] listOfFiles = {jf.getSelectedFile()};
+                filterBuilder(); //builds the filter
                 sendFiles(listOfFiles);
             }
         });
@@ -125,21 +147,57 @@ public class Gui {
             }
         });
         /////////////////////////////////
-        root.addComponentListener(new ComponentAdapter() {
-        });
+
     }
     public void resetTimer(){
         seconds = 0;
         minutes = 0;
         hours = 0;
     }
+    public void filterBuilder(){
+        String tempfilter = "";
+        if(mp4CheckBox.isSelected()){
+            tempfilter = tempfilter + ".mp4,";
+        }
+        if(mkvCheckBox.isSelected()){
+            tempfilter = tempfilter + ".mkv,";
+        }
+        if(webmCheckBox.isSelected()){
+            tempfilter = tempfilter + ".webm,";
+        }
+        if(mpegCheckBox.isSelected()){
+            tempfilter = tempfilter + ".mpeg,";
+        }
+        System.out.println(textField2.getText());
+        if(aviCheckBox.isSelected()){
+            tempfilter = tempfilter + ".avi,";
+        }
+        if(movCheckBox.isSelected()){
+            tempfilter = tempfilter + ".mov";
+        }
+        filter = tempfilter.split(",");
+        for(String ff : filter){
+            System.out.println(ff);
+        }
+    }
 
     /**
      * Argument builder sets up a String array for arguments to be sent to process builder from UI components
      */
     public void ArgumentBuilder(){
-        int counter = 2;
-        String[] args = {Main.ffmpeg.toString(),"-i", "-c:v", "libx265","-params", comboBox1.getSelectedItem().toString(),"-x265-params","crf="+slider1.getValue()};
+        if(encodingComboBox3.getSelectedIndex() == 2){//vp9
+
+        }
+        if(encodingComboBox3.getSelectedIndex() == 1){//h264
+            String args = "-c:v,libx264,-params," + speedComboBox1.getSelectedItem().toString() +",-crf," +slider1.getValue();
+            ch.setArgs(args);
+        }
+        if(encodingComboBox3.getSelectedIndex() == 0){//h265
+            String args = "-c:v,libx265,-preset," + speedComboBox1.getSelectedItem().toString() +",-x265-params," + "crf="+slider1.getValue() + ",-acodec,copy";
+            ch.setArgs(args);
+        }
+        ch.setExtension(codecComboBox2.getSelectedItem().toString());
+
     }
 
     /**
@@ -162,10 +220,11 @@ public class Gui {
             temp = temp2;
         }
         LinkedList<File> filtered = filterFiles(temp);
-        pauseButton.setVisible(true);
         Thread t = new Thread(() -> {
-            ch.encode(filtered);
+            resetTimer();
             timer.start();
+            ch.encode(filtered);
+            timer.stop();
         });
         t.start();
 
@@ -210,13 +269,15 @@ public class Gui {
         for(int x = 0;x<total;x++){
             int l = files.get(x).getAbsolutePath().length();
             String filename = files.get(x).getName();
-            if (filename.substring(filename.length() - 3, filename.length()).equals("mkv") || filename.substring(filename.length() - 3, filename.length()).equals("avi")||filename.substring(filename.length() - 3, filename.length()).equalsIgnoreCase("mov")|| filename.substring(filename.length() - 3, filename.length()).equals("MTS")||filename.substring(filename.length() - 3, filename.length()).equalsIgnoreCase("mp4")) {
-                filtered.add(files.get(x));
+            for(String r : filter){
+                    if (filename.substring(filename.length() - (r.length()), filename.length()).equals(r)) {
+                        filtered.add(files.get(x));
+                }
             }
+
         }
         progressBar1.setMaximum(filtered.size());
         System.out.println(filtered.size());
         return filtered;
-
     }
 }
