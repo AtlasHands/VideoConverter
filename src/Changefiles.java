@@ -26,7 +26,7 @@ public class Changefiles {
 
                         }
                     }*/
-                    System.out.println("We Got Here");
+                    System.out.println(args);
                     jpb.setString(x + " / " + jpb.getMaximum());
                     int nameLength = files.get(x).getAbsolutePath().length();
                     String[] originalExtension = files.get(x).getPath().split(".");
@@ -42,7 +42,7 @@ public class Changefiles {
                     } catch (InterruptedException e) {
 
                     }
-                    File rename = new File(files.get(x).getAbsolutePath().substring(0,nameLength - 4) + "-o." + originalExtension[originalExtension.length]);
+                    File rename = new File(files.get(x).getAbsolutePath().substring(0,nameLength - 4) + "-o." + extension);
                     files.get(x).renameTo(rename);
                     jpb.setValue(x+1);
                     jpb.setString(x+1 + " / " + jpb.getMaximum());

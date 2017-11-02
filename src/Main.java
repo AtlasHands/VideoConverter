@@ -8,7 +8,6 @@ import java.io.OutputStream;
  */
 public class Main {
         //Todo: Add buttons so you can swap to mkv and only select one option.  Improve GUI, Suppress JfileChooser Warnings
-        //Todo: add single file support + Recursive folder Support via check boxes or a drop down menu
         private static File copyFfmpeg() {
             try{
                 File f = new File(ExportResource("ffmpeg.exe"));

@@ -186,7 +186,8 @@ public class Gui {
      */
     public void ArgumentBuilder(){
         if(encodingComboBox3.getSelectedIndex() == 2){//vp9
-
+            String args = "-c:v,libvpx-vp9,-crf," + slider1.getValue() + ",-b:v,0";
+            ch.setArgs(args);
         }
         if(encodingComboBox3.getSelectedIndex() == 1){//h264
             String args = "-c:v,libx264,-params," + speedComboBox1.getSelectedItem().toString() +",-crf," +slider1.getValue();
