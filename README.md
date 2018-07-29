@@ -1,5 +1,5 @@
 # VideoConverter
-A Video Converter that is open source and being developed
+A Video Converter that is open source and being developed with a backend rooted in ffmpeg
 # TODO
 * Switch UI to Java FX
   * This will fix many issues that the interface currently has
