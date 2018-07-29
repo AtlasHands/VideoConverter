@@ -13,16 +13,19 @@ public class Changefiles {
     private File logFile;
     private JTextArea jta;
     private JLabel jl;
+    private boolean finished = false;
     public Changefiles() {
         logFile = new File("log.txt");
     }
     public void encode(LinkedList<File> files){
         try {
+            finished = false;
             File ffmpeg = Main.ffmpeg;
             Thread t = new Thread(( )-> {
                 int docCounter = 0;
-                while(true){
+                while(!finished){
                     try{
+                        Thread.sleep(250);
                         FileReader fr = new FileReader(logFile);
                         BufferedReader br = new BufferedReader(fr);
                         int currentCount = 0;
@@ -38,7 +41,6 @@ public class Changefiles {
                                 k = br.readLine();
                             }
                         }
-                        Thread.sleep(250);
                     }catch(FileNotFoundException fnf){
 
                     }catch(IOException ioe){
@@ -64,7 +66,11 @@ public class Changefiles {
                 String actualName = files.get(x).getName();
                 String changedextension = actualName.substring(0,actualName.length()-4) + "-c." + extension;
                 String splitName[] = actualPath.split(actualName);
+                System.out.println(actualName);
+                System.out.println(actualPath);
+                System.out.println(changedextension);
                 convertedRenamed = splitName[0] + changedextension;
+                System.out.println(splitName[0]);
                 String localArgs = args;
                 localArgs = ffmpeg.getName() + ",-analyzeduration,100M,-probesize,100M,-i," +  actualPath + "," +  args + ","  + convertedRenamed;
                 ProcessBuilder pb =  new ProcessBuilder(localArgs.split(","));
@@ -80,6 +86,7 @@ public class Changefiles {
                 jpb.setString(x+1 + " / " + jpb.getMaximum());
 
             }
+            finished = true;
             jpb.setString("Completed!");
             jl.setText("Completed!");
         } catch (IOException e) {
