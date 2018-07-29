@@ -1,5 +1,9 @@
+import javafx.stage.FileChooser;
+
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
+import javax.swing.text.DefaultCaret;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -28,6 +32,9 @@ public class Gui {
     private JCheckBox aviCheckBox;
     private JButton chooseSingleFileButton;
     private JCheckBox mpegCheckBox;
+    private JLabel speedLabel;
+    private JTextArea textArea1;
+    private JLabel currentFileLabel;
     private JFileChooser jf;
     private JFrame f;
     private Changefiles ch;
@@ -44,6 +51,7 @@ public class Gui {
                //     Main.ffmpeg.delete();//deletes extracted ffmpeg if it exists
                // }
                 ch.proc.destroy();
+                ch.proc.destroyForcibly();
             }catch(NullPointerException e){}
         }));
         /////////////////////////////////
@@ -60,6 +68,13 @@ public class Gui {
         /////////////////////////////////
         ch = new Changefiles();
         ch.linkProgressBar(progressBar1);
+        ch.setTextArea(textArea1);
+        ch.setCurrentFileLabel(currentFileLabel);
+        DefaultCaret caret = (DefaultCaret)textArea1.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea1.setBorder(BorderFactory.createCompoundBorder(
+                root.getBorder(),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         //Setting Default Values
 
         textField1.setText(Integer.toString(slider1.getValue()));
@@ -75,6 +90,16 @@ public class Gui {
         f.setVisible(true);
         /////////////////////////////////
         //JFileChooser
+        encodingComboBox3.addActionListener((ActionEvent e) ->{
+            int index = encodingComboBox3.getSelectedIndex();
+            if(index == 3 || index == 2){
+                speedLabel.setVisible(false);
+                speedComboBox1.setVisible(false);
+            }else{
+                speedLabel.setVisible(true);
+                speedComboBox1.setVisible(true);
+            }
+        });
         chooseFileDirectoryButton.addActionListener((ActionEvent e) -> {
             progressBar1.setValue(0);
             progressBar1.setString("");
@@ -91,6 +116,8 @@ public class Gui {
         chooseSingleFileButton.addActionListener((ActionEvent e) ->{
             progressBar1.setValue(0);
             progressBar1.setString("");
+            FileChooser fc = new FileChooser();
+
             jf = new JFileChooser();
             jf.setFileSelectionMode(JFileChooser.FILES_ONLY);
             int returnVal = jf.showOpenDialog(f);
@@ -107,7 +134,7 @@ public class Gui {
                 int val = ((JSlider) ce.getSource()).getValue();
                 textField1.setText(Integer.toString(val));
         });
-        ///////////////////////////////// Todo: Find a way to pause a thread different from this way, its just stops everything
+        ///////////////////////////////// Todo: Find a way to pause a thread different from this way, this just stops everything
         //Pause button
         /*pauseButton.addActionListener((ActionEvent e) -> {
             if(pause = false){
@@ -185,6 +212,10 @@ public class Gui {
      * Argument builder sets up a String array for arguments to be sent to process builder from UI components
      */
     public void ArgumentBuilder(){
+        if(encodingComboBox3.getSelectedIndex() == 3){//AV1
+            String args = "-c:v,libaom-av1,-crf," + slider1.getValue() + ",-strict,experimental";
+            ch.setArgs(args);
+        }
         if(encodingComboBox3.getSelectedIndex() == 2){//vp9
             String args = "-c:v,libvpx-vp9,-crf," + slider1.getValue() + ",-b:v,0";
             ch.setArgs(args);
@@ -193,12 +224,11 @@ public class Gui {
             String args = "-c:v,libx264,-params," + speedComboBox1.getSelectedItem().toString() +",-crf," +slider1.getValue();
             ch.setArgs(args);
         }
-        if(encodingComboBox3.getSelectedIndex() == 0){//h265
-            String args = "-c:v,libx265,-preset," + speedComboBox1.getSelectedItem().toString() +",-x265-params," + "crf="+slider1.getValue() + ",-acodec,copy";
+        if(encodingComboBox3.getSelectedIndex() == 0) {//h265
+            String args = "-c:v,libx265,-preset," + speedComboBox1.getSelectedItem().toString() + ",-x265-params," + "crf=" + slider1.getValue() + ",-acodec,copy,-c:s,copy";
             ch.setArgs(args);
         }
         ch.setExtension(codecComboBox2.getSelectedItem().toString());
-
     }
 
     /**
@@ -245,10 +275,12 @@ public class Gui {
             counter = 0;
             for(File fz : f){
                 if(fz.isDirectory()){
+                    LinkedList<File> recursionLinkedList = new LinkedList<File>();
                     recursion = fz.listFiles();
                     for(File fy : recursion){
-                        files.add(fy);
+                        recursionLinkedList.add(fy);
                     }
+                    files.addAll(expandFiles(recursionLinkedList));
                     continue;
                 }
                 files.add(fz);
@@ -268,7 +300,6 @@ public class Gui {
         int total = files.size();
         LinkedList<File> filtered = new LinkedList<>();
         for(int x = 0;x<total;x++){
-            int l = files.get(x).getAbsolutePath().length();
             String filename = files.get(x).getName();
             for(String r : filter){
                     if (filename.substring(filename.length() - (r.length()), filename.length()).equals(r)) {

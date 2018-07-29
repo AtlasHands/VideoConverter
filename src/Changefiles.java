@@ -1,8 +1,6 @@
-
 import javax.swing.*;
 import java.io.*;
 import java.util.LinkedList;
-
 
 /**
  * Created by Alpine Tree on 6/20/2017.
@@ -12,45 +10,80 @@ public class Changefiles {
     public Process proc;
     private String args;
     private String extension;
+    private File logFile;
+    private JTextArea jta;
+    private JLabel jl;
     public Changefiles() {
-
+        logFile = new File("log.txt");
     }
     public void encode(LinkedList<File> files){
         try {
-                File ffmpeg = Main.ffmpeg;
-                for (int x = 0; x < files.size(); x++) {
-                    /*while(Gui.pause = true) {Todo: This stops the process completely, want a way to pause effectively
-                        try {
-                            Thread.sleep(500);
-                       } catch (InterruptedException e) {
-
+            File ffmpeg = Main.ffmpeg;
+            Thread t = new Thread(( )-> {
+                int docCounter = 0;
+                while(true){
+                    try{
+                        FileReader fr = new FileReader(logFile);
+                        BufferedReader br = new BufferedReader(fr);
+                        int currentCount = 0;
+                        br.skip(docCounter);
+                        String k = br.readLine();
+                        while(k != null){
+                            if(currentCount < docCounter){
+                                k=br.readLine();
+                                currentCount++;
+                            }else{
+                                docCounter++;
+                                jta.append(k + "\n");
+                                k = br.readLine();
+                            }
                         }
-                    }*/
-                    System.out.println(args);
-                    jpb.setString(x + " / " + jpb.getMaximum());
-                    int nameLength = files.get(x).getAbsolutePath().length();
-                    String[] originalExtension = files.get(x).getPath().split(".");
-                    System.out.println(x);
-                    String renamed = files.get(x).getAbsolutePath().substring(0, nameLength - 4) + "-c." + extension;
-                    String tempargs = ffmpeg.toString() + ",-i," + files.get(x).getAbsolutePath() + "," +  args + ","  + renamed;
-                    ProcessBuilder pc = new ProcessBuilder(tempargs.split(","));
-                    pc.inheritIO();
-                    pc.redirectOutput();
-                    proc = pc.start();
-                    try {
-                        proc.waitFor();
-                    } catch (InterruptedException e) {
+                        Thread.sleep(250);
+                    }catch(FileNotFoundException fnf){
+
+                    }catch(IOException ioe){
+
+                    }catch(InterruptedException ie){
 
                     }
-                    File rename = new File(files.get(x).getAbsolutePath().substring(0,nameLength - 4) + "-o." + extension);
-                    files.get(x).renameTo(rename);
-                    jpb.setValue(x+1);
-                    jpb.setString(x+1 + " / " + jpb.getMaximum());
-
                 }
-                jpb.setString("Completed!");
+            });
+            t.start();
+            for (int x = 0; x < files.size(); x++) {
+                /*while(Gui.pause = true) {Todo: This stops the process completely, want a way to pause effectively
+                    try {
+                        Thread.sleep(500);
+                   } catch (InterruptedException e) {
 
+                    }
+                }*/
+                jl.setText(files.get(x).getName().substring(0,50) + "...");
+                String convertedRenamed = "";
+                jpb.setString(x + " / " + jpb.getMaximum());
+                String actualPath = files.get(x).getAbsolutePath();
+                String actualName = files.get(x).getName();
+                String changedextension = actualName.substring(0,actualName.length()-4) + "-c." + extension;
+                String splitName[] = actualPath.split(actualName);
+                convertedRenamed = splitName[0] + changedextension;
+                String localArgs = args;
+                localArgs = ffmpeg.getName() + ",-analyzeduration,100M,-probesize,100M,-i," +  actualPath + "," +  args + ","  + convertedRenamed;
+                ProcessBuilder pb =  new ProcessBuilder(localArgs.split(","));
+                pb.redirectErrorStream(true);
+                pb.redirectOutput(logFile);
+                Process p = pb.start();
+                try{
+                    p.waitFor();
+                }catch(InterruptedException IE){
+                    System.out.println(IE.getMessage());
+                }
+                jpb.setValue(x+1);
+                jpb.setString(x+1 + " / " + jpb.getMaximum());
+
+            }
+            jpb.setString("Completed!");
+            jl.setText("Completed!");
         } catch (IOException e) {
+            System.out.println(e.getMessage());
             System.out.println("Unable to send command");
         } catch (NullPointerException nl) {
             System.out.println(nl.getStackTrace());
@@ -65,5 +98,11 @@ public class Changefiles {
     }
     public void setExtension(String ext){
         extension = ext;
+    }
+    public void setTextArea(JTextArea jt){
+        jta=jt;
+    }
+    public void setCurrentFileLabel(JLabel l){
+        jl = l;
     }
 }
